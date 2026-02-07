@@ -9,6 +9,7 @@
         h1 { font-size: 20px; color: #333; }
         .input-group { margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
         .input-group label { width: 120px; font-weight: bold; }
+        /* マイナスを入力しにくくし、見た目を整える */
         input { padding: 8px; width: 100px; font-size: 16px; text-align: right; }
         button { width: 100%; padding: 15px; font-size: 18px; background-color: #0366d6; color: white; border: none; border-radius: 5px; margin-top: 20px; cursor: pointer; }
         button:hover { background-color: #0255b3; }
@@ -19,28 +20,28 @@
 </head>
 <body>
 
-    <h1>📊 OFFSET / 判定分析</h1>
-    <p>各判定の個数を入力してください。</p>
+    <h1>OFFSET / 判定分析</h1>
+    <p>各判定の個数を入力してください（0以上の整数）。</p>
 
     <div class="input-group">
         <label>Pure+ (P)</label>
-        <input type="number" id="P" value="0">
+        <input type="number" id="P" value="0" min="0" step="1">
     </div>
     <div class="input-group">
         <label>FarLate (FL)</label>
-        <input type="number" id="FL" value="0">
+        <input type="number" id="FL" value="0" min="0" step="1">
     </div>
     <div class="input-group">
         <label>PureLate (PL)</label>
-        <input type="number" id="PL" value="0">
+        <input type="number" id="PL" value="0" min="0" step="1">
     </div>
     <div class="input-group">
         <label>FarEarly (FE)</label>
-        <input type="number" id="FE" value="0">
+        <input type="number" id="FE" value="0" min="0" step="1">
     </div>
     <div class="input-group">
         <label>PureEarly (PE)</label>
-        <input type="number" id="PE" value="0">
+        <input type="number" id="PE" value="0" min="0" step="1">
     </div>
 
     <button onclick="calc()">分析実行</button>
@@ -60,22 +61,25 @@
             const FE = Number(document.getElementById('FE').value);
             const PE = Number(document.getElementById('PE').value);
 
-            // 2. 総数 n を計算
+            // 2. エラーチェック：マイナスの値がないか確認
+            if (P < 0 || FL < 0 || PL < 0 || FE < 0 || PE < 0) {
+                alert("エラー：ノーツ数はマイナスになりません。0以上の正しい値を入力してください。");
+                return;
+            }
+
+            // 3. 総数 n を計算
             const n = P + FL + PL + FE + PE;
 
-            // エラー処理: データが少なすぎると計算できないため
+            // エラーチェック：データ不足
             if (n <= 1) {
                 alert("データの総数が少なすぎます (2個以上必要です)");
                 return;
             }
 
-            // 3. 平均 (mu) の計算
-            // Java: double mu = (75.0*(FL-FE)+37.5*(PL-PE))/n;
+            // 4. 平均 (mu) の計算
             const mu = (75.0 * (FL - FE) + 37.5 * (PL - PE)) / n;
 
-            // 4. 分散 (sig2) の計算
-            // Javaの長い計算式をそのまま移植
-            // FE*(-75-mu)^2 + PE*(-37.5-mu)^2 ...
+            // 5. 分散 (sig2) の計算
             const termFE = FE * Math.pow(-75.0 - mu, 2);
             const termPE = PE * Math.pow(-37.5 - mu, 2);
             const termP  = P  * Math.pow(0.0 - mu, 2);
@@ -84,15 +88,14 @@
 
             const sig2 = (termFE + termPE + termP + termPL + termFL) / (n - 1);
 
-            // 5. 信頼区間の計算
-            // Java: 1.96 * Math.sqrt(sig2/n)
+            // 6. 信頼区間の計算
             const margin = 1.96 * Math.sqrt(sig2 / n);
             const lower = mu - margin;
             const upper = mu + margin;
 
-            // 6. 結果を表示 (小数点第4位まで表示するなど調整)
+            // 7. 結果を表示
             document.getElementById('res-n').innerText = n;
-            document.getElementById('res-mu').innerText = mu.toFixed(4); // 小数点4桁
+            document.getElementById('res-mu').innerText = mu.toFixed(4);
             document.getElementById('res-ci').innerText = `[${lower.toFixed(4)}, ${upper.toFixed(4)}]`;
         }
     </script>
